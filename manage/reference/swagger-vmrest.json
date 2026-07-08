@@ -1,0 +1,3044 @@
+﻿{
+   "swagger": "2.0",
+   "info": {
+      "title": "VMware Workstation REST API",
+      "version": "1.3.1",
+      "description": "vmrest 1.3.1 25388281",
+      "termsOfService": "http://swagger.io/terms/"
+   },
+   "securityDefinitions": {
+      "BasicAuth": {
+         "type": "basic"
+      }
+   },
+   "basePath": "/api",
+   "schemes": [
+      "http",
+      "https"
+   ],
+   "tags": [
+      {"name": "VM Management"},
+      {"name": "VM Power Management"},
+      {"name": "VM Shared Folders Management"},
+      {"name": "VM Network Adapters Management"},
+      {"name": "Host Networks Management"}
+   ],
+   "consumes": [
+      "application/vnd.vmware.vmw.rest-v1+json"
+   ],
+   "produces": [
+      "application/vnd.vmware.vmw.rest-v1+json"
+   ],
+   "paths": {
+      "/vms": {
+         "get": {
+           "tags": [
+               "VM Management"
+            ],
+            "summary": "Returns a list of VM IDs and paths for all VMs",
+            "operationId": "getAllVMs",
+            "responses": {
+               "200": {
+                  "description": "All VMs' ID and path",
+                  "schema": {
+                     "type": "array",
+                     "items": {
+                        "$ref": "#/definitions/VMID"
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "post": {
+           "tags": [
+               "VM Management"
+            ],
+            "summary": "Creates a copy of the VM",
+            "operationId": "createVM",
+            "parameters": [
+               {
+                  "name": "params",
+                  "in": "body",
+                  "description": "Parameters of VM to create",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/VMCloneParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "201": {
+                  "description": "VM information",
+                  "schema": {
+                     "$ref": "#/definitions/VMInformation"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}": {
+         "get": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Returns the VM setting information of a VM",
+            "operationId": "getVM",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM information",
+                  "schema": {
+                     "$ref": "#/definitions/VMInformation"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "put": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Updates the VM settings",
+            "operationId": "updateVM",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "VM definition",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/VMParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM information",
+                  "schema": {
+                     "$ref": "#/definitions/VMInformation"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "delete": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Deletes a VM",
+            "operationId": "deleteVM",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "204": {
+                  "description": "VM deleted"
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/restrictions": {
+         "get": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Returns the restrictions information of the VM",
+            "operationId": "getVMRestrictions",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM restrictions information",
+                  "schema": {
+                     "$ref": "#/definitions/VMRestrictionsInformation"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/registration": {
+         "post": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Register VM to VM Library",
+            "operationId": "registerVM",
+            "parameters": [
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters of the VM to register",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/VMRegisterParameter"
+                  }
+               }
+            ],
+            "responses": {
+               "201": {
+                  "description": "VM registration information",
+                  "schema": {
+                     "$ref": "#/definitions/VMRrgistrationInformation"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/params/{name}": {
+         "get": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "Get the VM config params",
+            "operationId": "getVMParams",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "name",
+                  "in": "path",
+                  "description": "Name of the param",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM config parameter",
+                  "schema": {
+                     "$ref": "#/definitions/ConfigVMParamsParameter"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/configparams": {
+         "put": {
+            "tags": [
+               "VM Management"
+            ],
+            "summary": "update the vm config params",
+            "operationId": "configVMParams",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters set to the VM",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/ConfigVMParamsParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM config params updated",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/power": {
+         "get": {
+            "tags": [
+               "VM Power Management"
+            ],
+            "summary": "Returns the power state of the VM",
+            "operationId": "getPowerState",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password for encrypted VM. If VM is already powered on password is not needed.",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM power state",
+                  "schema": {
+                     "$ref": "#/definitions/VMPowerState"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "put": {
+            "tags": [
+               "VM Power Management"
+            ],
+            "summary": "Changes the VM power state",
+            "operationId": "changePowerState",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "operation",
+                  "in": "body",
+                  "description": "VM power operation: on, off, shutdown, suspend, pause, unpause",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/VMPowerOperation"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password for encrypted VM. If VM is already powered on password is not needed.",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM power state",
+                  "schema": {
+                     "$ref": "#/definitions/VMPowerState"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/sharedfolders": {
+         "get": {
+            "tags": [
+               "VM Shared Folders Management"
+            ],
+            "summary": "Returns all shared folders mounted in the VM",
+            "operationId": "getAllSharedFolders",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Shared folders mounted in the VM",
+                  "schema": {
+                     "$ref": "#/definitions/SharedFolders"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "post": {
+            "tags": [
+               "VM Shared Folders Management"
+            ],
+            "summary": "Mounts a new shared folder in the VM",
+            "operationId": "createSharedFolder",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters of the shared folder to mount",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/SharedFolder"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "201": {
+                  "description": "Shared folders mounted in the VM",
+                  "schema": {
+                     "$ref": "#/definitions/SharedFolders"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/sharedfolders/{folder id}": {
+         "delete": {
+            "tags": [
+               "VM Shared Folders Management"
+            ],
+            "summary": "Deletes a shared folder",
+            "operationId": "deleteSharedFolder",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "folder id",
+                  "in": "path",
+                  "description": "ID of shared folder",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "204": {
+                  "description": "Shared folder deleted"
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "put": {
+            "tags": [
+               "VM Shared Folders Management"
+            ],
+            "summary": "Updates a shared folder mounted in the VM",
+            "operationId": "updataSharedFolder",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "folder id",
+                  "in": "path",
+                  "description": "ID of VM shared folder",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters of the shared folder to update to",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/SharedFolderParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Shared folders mounted in the VM",
+                  "schema": {
+                     "$ref": "#/definitions/SharedFolders"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/nic": {
+         "get": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Returns all network adapters in the VM",
+            "operationId": "getAllNICDevices",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Network adapters in the VM",
+                  "schema": {
+                     "$ref": "#/definitions/NICDevices"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "post": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Creates a network adapter in the VM",
+            "operationId": "createNICDevice",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters of network adapter to create",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/NICDeviceParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "201": {
+                  "description": "Information of the network adapter created",
+                  "schema": {
+                     "$ref": "#/definitions/NICDevice"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/nic/{index}": {
+         "delete": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Deletes a VM network adapter",
+            "operationId": "deleteNICDevice",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "index",
+                  "in": "path",
+                  "description": "Index of VM network adapter",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "204": {
+                  "description": "Network adapter deleted"
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "put": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Updates a network adapter in the VM",
+            "operationId": "updateNICDevice",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "index",
+                  "in": "path",
+                  "description": "Index of VM network adapter",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Parameters of network adapter to update to",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/NICDeviceParameter"
+                  }
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Information of the network adapter updated to",
+                  "schema": {
+                     "$ref": "#/definitions/NICDevice"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/ip": {
+         "get": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Returns the IP address of a VM",
+            "operationId": "getIPAddress",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM IP address",
+                  "schema": {
+                     "type": "object",
+                     "required": [
+                        "ip"
+                     ],
+                     "properties": {
+                        "ip": {
+                           "type": "string",
+                           "description": "Guest OS IP address"
+                        }
+                     }
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vms/{id}/nicips": {
+         "get": {
+            "tags": [
+               "VM Network Adapters Management"
+            ],
+            "summary": "Returns the IP stack configuration of all NICs of a VM",
+            "operationId": "getNicInfo",
+            "parameters": [
+               {
+                  "name": "id",
+                  "in": "path",
+                  "description": "ID of VM",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                 "name": "vmPassword",
+                  "in": "query",
+                  "description": "VM password",
+                  "required": false,
+                  "type": "string",
+                  "format": "password"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "VM NICs IP stack configuration",
+                  "schema": {
+                     "$ref": "#/definitions/NicIpStackAll"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnets": {
+         "post": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Creates a virtual network",
+            "operationId": "createNetwork",
+            "parameters": [
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Host network to be created",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/CreateVmnetParameter"
+                  }
+               }
+            ],
+            "responses": {
+               "201": {
+                  "description": "Virtual network",
+                  "schema": {
+                     "$ref": "#/definitions/Network"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnet": {
+         "get": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Returns all virtual networks",
+            "operationId": "getAllNetworks",
+            "responses": {
+               "200": {
+                  "description": "All virtual networks",
+                  "schema": {
+                     "$ref": "#/definitions/Networks"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnet/{vmnet}/portforward": {
+         "get": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Returns all port forwardings",
+            "operationId": "getPortforwards",
+            "parameters": [
+               {
+                  "name": "vmnet",
+                  "in": "path",
+                  "description": "NAT type of virtual network",
+                  "required": true,
+                  "type": "string"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "All port forwardings",
+                  "schema": {
+                     "$ref": "#/definitions/Portforwards"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnet/{vmnet}/mactoip": {
+         "get": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Returns all MAC-to-IP settings for DHCP service",
+            "operationId": "getMACToIPs",
+            "parameters": [
+               {
+                  "name": "vmnet",
+                  "in": "path",
+                  "description": "Virtual network that has DHCP enabled",
+                  "required": true,
+                  "type": "string"
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "All mac to ip settings",
+                  "schema": {
+                     "$ref": "#/definitions/MACToIPs"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnet/{vmnet}/mactoip/{mac}": {
+         "put": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Updates the MAC-to-IP binding",
+            "operationId": "updateMacToIP",
+            "parameters": [
+               {
+                  "name": "vmnet",
+                  "in": "path",
+                  "description": "Virtual network that enabled DHCP",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "mac",
+                  "in": "path",
+                  "description": "Mac address that want to be mapped with a given IP",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "IP that will be assigned to given Mac address. If empty IP, the original Mac to IP binding will be deleted",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/MacToIPParameter"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Mac to IP mapping updated",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "409": {
+                  "description": "Resource state conflicts",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      },
+      "/vmnet/{vmnet}/portforward/{protocol}/{port}": {
+         "put": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Updates port forwarding",
+            "operationId": "updatePortforward",
+            "parameters": [
+               {
+                  "name": "vmnet",
+                  "in": "path",
+                  "description": "NAT type of virtual network",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "protocol",
+                  "in": "path",
+                  "description": "Protocol type: tcp, udp",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "port",
+                  "in": "path",
+                  "description": "Host port number",
+                  "required": true,
+                  "type": "integer",
+                  "format": "int16"
+               },
+               {
+                  "name": "parameters",
+                  "in": "body",
+                  "description": "Guest to forward to",
+                  "required": true,
+                  "schema": {
+                     "$ref": "#/definitions/PortforwardParameter"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "Port forwarding updated",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         },
+         "delete": {
+            "tags": [
+               "Host Networks Management"
+            ],
+            "summary": "Deletes port forwarding",
+            "operationId": "deletePortforward",
+            "parameters": [
+               {
+                  "name": "vmnet",
+                  "in": "path",
+                  "description": "NAT type of virtual network",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "protocol",
+                  "in": "path",
+                  "description": "Protocol type: tcp, udp",
+                  "required": true,
+                  "type": "string"
+               },
+               {
+                  "name": "port",
+                  "in": "path",
+                  "description": "Host port number",
+                  "required": true,
+                  "type": "integer",
+                  "format": "int16"
+               }
+            ],
+            "responses": {
+               "204": {
+                  "description": "Port forwarding deleted"
+               },
+               "400": {
+                  "description": "Invalid parameters",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "401": {
+                  "description": "Authentication failed",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "403": {
+                  "description": "Permission denied",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "404": {
+                  "description": "No such resource",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "406": {
+                  "description": "Content type was not supported",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "500": {
+                  "description": "Server error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               },
+               "default": {
+                  "description": "Unexpected error",
+                  "schema": {
+                     "$ref": "#/definitions/ErrorModel"
+                  }
+               }
+            }
+         }
+      }
+   },
+   "definitions": {
+      "VMParameter": {
+         "type": "object",
+         "properties": {
+            "processors": {
+               "$ref": "#/definitions/VMProcessors"
+            },
+            "memory": {
+               "$ref": "#/definitions/VMMemory"
+            }
+         }
+      },
+      "VMInformation": {
+         "type": "object",
+         "required": [
+            "id"
+         ],
+         "properties": {
+            "id": {
+               "type": "string"
+            },
+            "cpu": {
+               "$ref": "#/definitions/VMCPU"
+            },
+            "memory": {
+               "$ref": "#/definitions/VMMemory"
+            }
+         }
+      },
+      "VMRestrictionsInformation": {
+         "type": "object",
+         "required": [
+            "id"
+         ],
+         "properties": {
+            "id": {
+               "type": "string"
+            },
+            "managedOrg": {
+               "type": "string",
+               "description":"The organization manages the VM"
+            },
+            "integrityconstraint": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "cpu": {
+               "$ref": "#/definitions/VMCPU"
+            },
+            "memory": {
+               "$ref": "#/definitions/VMMemory"
+            },
+            "applianceView": {
+               "$ref": "#/definitions/VMApplianceView"
+            },
+            "cddvdList": {
+               "$ref": "#/definitions/VMConnectedDeviceList"
+            },
+            "floopyList": {
+               "$ref": "#/definitions/VMConnectedDeviceList"
+            },
+            "firewareType": {
+               "$ref": "#/definitions/Number"
+            },
+            "guestIsolation": {
+               "$ref": "#/definitions/VMGuestIsolation"
+            },
+            "niclist": {
+               "$ref": "#/definitions/NICDevices"
+            },
+            "parallelPortList": {
+               "$ref": "#/definitions/VMConnectedDeviceList"
+            },
+            "serialPortList": {
+               "$ref": "#/definitions/VMConnectedDeviceList"
+            },
+            "usbList": {
+               "$ref": "#/definitions/VMUsbList"
+            },
+            "remoteVNC": {
+               "$ref": "#/definitions/VMRemoteVNC"
+            }
+         }
+      },
+      "VMApplianceView": {
+         "type": "object",
+         "properties": {
+            "author": {
+               "type": "string"
+            },
+            "version": {
+               "type": "string"
+            },
+            "port": {
+               "$ref": "#/definitions/Port"
+            },
+            "showAtPowerOn": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            }
+         }
+      },
+      "VMConnectedDevice": {
+         "type": "object",
+         "properties": {
+            "index": {
+               "$ref": "#/definitions/Number"
+            },
+            "startConnected": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "connectionStatus": {
+               "$ref": "#/definitions/Number"
+            },
+            "devicePath": {
+               "type": "string"
+            }
+         }
+      },
+      "VMConnectedDeviceList": {
+         "type":"object",
+         "properties":{
+            "num": {
+               "$ref": "#/definitions/Number"
+            },
+            "devices": {
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/VMConnectedDevice"
+               }
+            }
+         }
+      },
+      "VMGuestIsolation": {
+         "type": "object",
+         "properties": {
+            "copyDisabled": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "dndDisabled": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "hgfsDisabled": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "pasteDisabled": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            }
+         }
+      },
+      "VMUsbDevice": {
+         "type": "object",
+         "properties": {
+            "index": {
+               "$ref": "#/definitions/Number"
+            },
+            "connected": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "backingInfo": {
+               "type": "string"
+            },
+            "BackingType": {
+               "$ref": "#/definitions/Number"
+            }
+         }
+      },
+      "VMUsbList": {
+         "type":"object",
+         "properties":{
+            "num": {
+               "$ref": "#/definitions/Number"
+            },
+            "usbDevices": {
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/VMUsbDevice"
+               }
+            }
+         }
+      },
+      "VMRemoteVNC": {
+         "type": "object",
+         "properties": {
+            "VNCEnabled": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "VNCPort": {
+               "$ref": "#/definitions/Port"
+            }
+         }
+      },
+      "VMRegisterParameter": {
+         "type": "object",
+         "properties": {
+            "name": {
+               "description": "Register VM name",
+               "type": "string"
+            },
+            "path": {
+               "description": "Register VM path",
+               "type": "string"
+            }
+         }
+      },
+      "VMRrgistrationInformation": {
+         "type": "object",
+         "properties": {
+            "id": {
+               "description": "Registered VM name id",
+               "type": "string"
+            },
+            "path": {
+               "description": "Registered VM path",
+               "type": "string"
+            }
+         }
+      },
+      "ConfigVMParamsParameter": {
+         "type": "object",
+         "properties": {
+            "name": {
+               "description": "config params name",
+               "type": "string"
+            },
+            "value": {
+               "description": "config params value",
+               "type": "string"
+            }
+         }
+      },
+      "VMCloneParameter": {
+         "type": "object",
+         "required": [
+            "name",
+            "parentId"
+         ],
+         "properties": {
+            "name": {
+               "description": "New VM name",
+               "type": "string"
+            },
+            "parentId": {
+               "description": "Existing VM ID to clone.",
+               "type": "string"
+            }
+         }
+      },
+      "VMID": {
+         "required": [
+            "id",
+            "path"
+         ],
+         "properties": {
+            "id": {
+               "type": "string",
+               "description": "ID of the VM"
+            },
+            "path": {
+               "type": "string",
+               "description": "Path of the VM"
+            }
+         }
+      },
+      "VMPowerState": {
+         "type": "object",
+         "required": [
+            "power_state"
+         ],
+         "properties": {
+            "power_state": {
+               "type": "string",
+               "enum": [
+                  "poweredOn",
+                  "poweredOff",
+                  "paused",
+                  "suspended"
+               ]
+            }
+         }
+      },
+      "VMCPU": {
+         "description": "The CPU information of VM",
+         "type": "object",
+         "readOnly": true,
+         "properties": {
+            "processors": {
+               "$ref": "#/definitions/VMProcessors"
+            }
+         }
+      },
+      "VMProcessors": {
+         "description": "Number of processor cores",
+         "type": "integer",
+         "format": "int32",
+         "readOnly": true,
+         "default": 1
+      },
+      "VMMemory": {
+         "description": "Memory size in mega bytes",
+         "type": "integer",
+         "format": "int32",
+         "readOnly": true,
+         "default": 512
+      },
+      "VMPowerOperation": {
+         "type": "string",
+         "enum": [
+            "on",
+            "off",
+            "shutdown",
+            "suspend",
+            "pause",
+            "unpause"
+         ]
+      },
+      "SharedFolder": {
+         "required": [
+            "folder_id",
+            "host_path",
+            "flags"
+         ],
+         "properties": {
+            "folder_id": {
+               "type": "string",
+               "description": "ID of folder which be mounted to the host"
+            },
+            "host_path": {
+               "type": "string",
+               "description": "Path of the host shared folder"
+            },
+            "flags": {
+               "type": "integer",
+               "description": "The flags property specifies how the folder will be accessed by the VM.\nThere is only one flag supported which is \"4\" and means read/write access.\n"
+            }
+         }
+      },
+      "SharedFolders": {
+         "description": "The shared folders mounted to this VM",
+         "type": "array",
+         "items": {
+            "$ref": "#/definitions/SharedFolder"
+         }
+      },
+      "SharedFolderParameter": {
+         "required": [
+            "host_path",
+            "flags"
+         ],
+         "properties": {
+            "host_path": {
+               "type": "string",
+               "description": "Path of the host shared folder"
+            },
+            "flags": {
+               "type": "integer",
+               "description": "The flags property specifies how the folder will be accessed by the VM.\nThere is only one flag supported which is \"4\" and means read/write access.\n"
+            }
+         }
+      },
+      "NICDevice": {
+         "required": [
+            "index",
+            "type",
+            "vmnet",
+            "macAddress"
+         ],
+         "properties": {
+            "index": {
+               "$ref": "#/definitions/NICIndex"
+            },
+            "type": {
+               "type": "string",
+               "description": "The network type of network adapter",
+               "enum": [
+                  "bridged",
+                  "nat",
+                  "hostonly",
+                  "custom"
+               ]
+            },
+            "vmnet": {
+               "type": "string",
+               "description": "The vmnet name"
+            },
+            "macAddress": {
+               "type": "string",
+               "description": "Mac address"
+            }
+         }
+      },
+      "NICDevices": {
+         "description": "The list of network adapters",
+         "type": "object",
+         "required": [
+            "num",
+            "nics"
+         ],
+         "properties": {
+            "num": {
+               "$ref": "#/definitions/NICNumber"
+            },
+            "nics": {
+               "description": "The network adapter added to this VM",
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/NICDevice"
+               }
+            }
+         }
+      },
+      "NICDeviceParameter": {
+         "required": [
+            "type",
+            "vmnet"
+         ],
+         "properties": {
+            "type": {
+               "type": "string",
+               "description": "The network type of network adapter",
+               "enum": [
+                  "custom",
+                  "bridged",
+                  "nat",
+                  "hostonly"
+               ]
+            },
+            "vmnet": {
+               "type": "string",
+               "description": "The vmnet name, it should only be used while type is custom"
+            }
+         }
+      },
+      "CreateVmnetParameter": {
+         "required": [
+            "name"
+         ],
+         "properties": {
+            "name": {
+               "type": "string",
+               "description": "The host network name"
+            },
+            "type": {
+               "type": "string",
+               "description": "The host network type",
+               "enum": [
+                  "nat",
+                  "hostOnly"
+               ]
+            }
+         }
+     },
+      "Network": {
+         "description": "The virtual network",
+         "required": [
+            "name",
+            "type",
+            "dhcp",
+            "subnet",
+            "mask"
+         ],
+         "properties": {
+            "name": {
+               "type": "string",
+               "description": "Name of virtual network"
+            },
+            "type": {
+               "type": "string",
+               "enum": [
+                  "bridged",
+                  "nat",
+                  "hostOnly"
+               ]
+            },
+            "dhcp": {
+               "type": "string",
+               "enum": [
+                  "true",
+                  "false"
+               ]
+            },
+            "subnet": {
+               "type": "string"
+            },
+            "mask": {
+               "type": "string"
+            }
+         }
+      },
+      "Networks": {
+         "description": "The list of virtual networks",
+         "type": "object",
+         "required": [
+            "num",
+            "vmnets"
+         ],
+         "properties": {
+            "num": {
+               "$ref": "#/definitions/Number"
+            },
+            "vmnets": {
+               "description": "The list of virtual networks",
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/Network"
+               }
+            }
+         }
+      },
+      "MACToIP": {
+         "description": "The MAC to IP setting",
+         "required": [
+            "vmnet",
+            "mac",
+            "ip"         ],
+         "properties": {
+            "vmnet": {
+               "type": "string"
+            },
+            "mac": {
+               "type": "string"
+            },
+            "ip": {
+               "type": "string"
+            }
+         }
+      },
+      "MACToIPs": {
+         "description": "The list of MAC to IP settings",
+         "type": "object",
+         "required": [
+            "num",
+            "mactoip"
+         ],
+         "properties": {
+            "num": {
+               "$ref": "#/definitions/Number"
+            },
+            "mactoips": {
+               "description": "The list of MAC to IP settings",
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/MACToIP"
+               }
+            }
+         }
+      },
+      "Portforward": {
+         "description": "The port forwarding",
+         "required": [
+            "port",
+            "protocol",
+            "desc",
+            "guest"
+         ],
+         "properties": {
+            "port": {
+               "$ref": "#/definitions/Port"
+            },
+            "protocol": {
+               "type": "string",
+               "enum": [
+                  "tcp",
+                  "udp"
+               ]
+            },
+            "desc": {
+               "type": "string"
+            },
+            "guest": {
+               "required": [
+                  "ip",
+                  "port"
+               ],
+               "properties": {
+                  "ip": {
+                     "type": "string"
+                  },
+                  "port": {
+                     "$ref": "#/definitions/Port"
+                  }
+               }
+            }
+         }
+      },
+      "Portforwards": {
+         "description": "The list of port forwarding",
+         "type": "object",
+         "required": [
+            "num",
+            "port_forwardings"
+         ],
+         "properties": {
+            "num": {
+               "$ref": "#/definitions/Number"
+            },
+            "port_forwardings": {
+               "description": "The list of port forwardings",
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/Portforward"
+               }
+            }
+         }
+      },
+      "PortforwardParameter": {
+         "required": [
+            "guestIp",
+            "guestPort"
+         ],
+         "properties": {
+            "guestIp": {
+               "type": "string"
+            },
+            "guestPort": {
+               "$ref": "#/definitions/Port"
+            },
+            "desc": {
+               "type": "string"
+            }
+         }
+      },
+      "NicIpStack": {
+         "description": "Information about a NIC",
+         "type" : "object",
+         "required": [
+            "mac"
+         ],
+         "properties": {
+            "mac": {
+               "description": "Mac address of the interface",
+               "$ref": "#/definitions/MacAddress"
+            },
+            "ip": {
+               "description": "IP address(es) of the interface (CIDR)",
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/IPNetAddress"
+               }
+            },
+            "dns": {
+               "description": "DNS configuration of the interface",
+               "$ref": "#/definitions/DnsConfig"
+            },
+            "wins": {
+               "description": "WINS configuration of the interface",
+               "$ref": "#/definitions/WinsConfig"
+            },
+            "dhcp4": {
+               "description": "DHCPv4 configuration of the interface",
+               "$ref": "#/definitions/DhcpConfig"
+            },
+            "dhcp6": {
+               "description": "DHCPv6 configuration of the interface",
+               "$ref": "#/definitions/DhcpConfig"
+            }
+         }
+      },
+      "NicIpStackAll": {
+         "description": "Information about all NICs",
+         "type": "object",
+         "properties": {
+            "nics": {
+               "$ref": "#/definitions/NicIpStack"
+            },
+            "routes": {
+               "type": "array",
+               "items": {
+                  "$ref": "#/definitions/RouteEntry"
+               }
+            },
+            "dns": {
+               "description": "Global DNS configuration",
+               "$ref": "#/definitions/DnsConfig"
+            },
+            "wins": {
+               "description": "Global WINS configuration",
+               "$ref": "#/definitions/WinsConfig"
+            },
+            "dhcpv4": {
+               "description": "Global DHCPv4 configuration",
+               "$ref": "#/definitions/DhcpConfig"
+            },
+            "dhcpv6": {
+               "description": "Global DHCPv6 configuration",
+               "$ref": "#/definitions/DhcpConfig"
+            }
+         }
+      },
+      "Number": {
+         "description": "Number of items",
+         "type": "integer",
+         "format": "int32",
+         "readOnly": true,
+         "default": 0
+      },
+      "NICNumber": {
+         "description": "Number of NIC devices",
+         "type": "integer",
+         "format": "int32",
+         "readOnly": true,
+         "default": 1
+      },
+      "NICIndex": {
+         "description": "Index of Network Adapters",
+         "type": "integer",
+         "format": "int32",
+         "readOnly": true,
+         "default": 1
+      },
+      "Port": {
+         "description": "port of communication",
+         "type": "integer",
+         "format": "int16",
+         "readOnly": true,
+         "default": 0
+      },
+      "MacAddress": {
+         "description": "Mac address, E.g., de:ad:be:ef:12:34",
+         "type": "string"
+      },
+      "IPAddress": {
+         "description": "IP address",
+         "type": "string"
+      },
+      "IPNetAddress": {
+         "description": "IP address in CIDR notation, E.g., 192.168.0.1/24",
+         "type": "string"
+      },
+      "DnsConfig": {
+         "description": "DNS configuration",
+         "type": "object",
+         "properties": {
+            "hostname": {
+               "type": "string"
+            },
+            "domainname": {
+               "type": "string"
+            },
+            "server": {
+               "type": "array",
+               "items": {
+                  "type": "string"
+               }
+            },
+            "search": {
+               "type": "array",
+               "items": {
+                  "type": "string"
+               }
+            }
+         }
+      },
+      "DhcpConfig": {
+         "description": "DHCP configuration",
+         "type": "object",
+         "required": [
+            "enabled",
+            "setting"
+         ],
+         "properties": {
+            "enabled": {
+               "type": "boolean"
+            },
+            "setting": {
+               "type": "string"
+            }
+         }
+      },
+      "WinsConfig": {
+         "description": "WINS configuration",
+         "type": "object",
+         "required": [
+            "primary",
+            "secondary"
+         ],
+         "properties": {
+            "primary": {
+               "type": "string"
+            },
+            "secondary": {
+               "type": "string"
+            }
+         }
+      },
+      "RouteEntry": {
+         "description": "Routing entry",
+         "type": "object",
+         "required": [
+            "dest",
+            "prefix",
+            "interface",
+            "type",
+            "metric"
+         ],
+         "properties": {
+            "dest": {
+               "$ref": "#/definitions/IPAddress"
+            },
+            "prefix": {
+               "$ref": "#/definitions/Number"
+            },
+            "nexthop": {
+               "$ref": "#/definitions/IPAddress"
+            },
+            "interface": {
+               "description": "Id of NIC",
+               "$ref": "#/definitions/Number"
+            },
+            "type": {
+               "$ref": "#/definitions/Number"
+            },
+            "metric": {
+               "$ref": "#/definitions/Number"
+            }
+         }
+      },
+      "DaemonState": {
+         "type": "string",
+         "enum": [
+            "on",
+            "off"
+         ]
+      },
+      "MacToIPParameter": {
+         "required": [
+            "IP"
+         ],
+         "properties": {
+            "IP": {
+               "type": "string",
+               "dscription":"IP that will be assiged to given Mac"
+            }
+         }
+      },
+      "ErrorModel": {
+         "required": [
+            "code",
+            "message"
+         ],
+         "properties": {
+            "code": {
+               "type": "integer",
+               "format": "int32"
+            },
+            "message": {
+               "type": "string"
+            }
+         }
+      }
+   }
+}

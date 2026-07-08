@@ -1,0 +1,7 @@
+{
+  "startIp": "192.168.1.100",
+  "endIp": "192.168.1.110",
+  "username": "YOUR_USERNAME",
+  "password": "YOUR_PASSWORD",
+  "hiddenVMs": []
+}
