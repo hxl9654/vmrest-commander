@@ -175,7 +175,8 @@ app.post('/api/power', async (req, res) => {
         const response = await client.put(`/vms/${id}/power`, operation, {
             headers: {
                 'Content-Type': 'application/vnd.vmware.vmw.rest-v1+json'
-            }
+            },
+            timeout: 60000
         });
         res.json(response.data);
     } catch (e) {

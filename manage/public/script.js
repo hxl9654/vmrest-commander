@@ -61,11 +61,8 @@ async function updateConfig(updates) {
     }
 }
 
-async function scanNetwork() {
-    // Prevent overlapping scans
-    if (!DOM.loading.classList.contains('hidden') && currentHostsData.length > 0) {
-        // Just show a small indicator if we wanted to, but we'll just let it run in background if we don't clear UI
-    } else {
+async function scanNetwork(isBackground = false) {
+    if (!isBackground) {
         DOM.loading.classList.remove('hidden');
         DOM.resultsContainer.innerHTML = '';
     }
@@ -78,10 +75,14 @@ async function scanNetwork() {
         currentHostsData = await res.json();
         renderHosts();
     } catch (e) {
-        DOM.errorMessage.textContent = 'Failed to scan the network. Check if server is running.';
-        DOM.errorMessage.classList.remove('hidden');
+        if (!isBackground) {
+            DOM.errorMessage.textContent = 'Failed to scan the network. Check if server is running.';
+            DOM.errorMessage.classList.remove('hidden');
+        }
     } finally {
-        DOM.loading.classList.add('hidden');
+        if (!isBackground) {
+            DOM.loading.classList.add('hidden');
+        }
     }
 }
 
@@ -208,6 +209,10 @@ function renderHosts() {
 // Modal handling
 window.promptAction = function(ip, id, operation, vmName) {
     pendingAction = { ip, id, operation, vmName };
+    if (operation === 'on') {
+        confirmAction();
+        return;
+    }
     DOM.modalText.innerHTML = `Are you sure you want to <strong>power ${operation}</strong> the VM <strong>${vmName}</strong> on host ${ip}?`;
     DOM.modal.classList.remove('hidden');
 }
@@ -223,8 +228,19 @@ async function confirmAction() {
     const { ip, id, operation } = pendingAction;
     closeModal();
     
-    // Optimistic UI update or just show loading...
-    // Let's rescan to get updated states
+    // Optimistic UI update to make it feel fast
+    const host = currentHostsData.find(h => h.ip === ip);
+    if (host) {
+        const vm = host.vms.find(v => v.id === id);
+        if (vm) {
+            if (operation === 'on' || operation === 'unpause') vm.power_state = 'poweredOn';
+            else if (operation === 'off' || operation === 'shutdown') vm.power_state = 'poweredOff';
+            else if (operation === 'suspend') vm.power_state = 'suspended';
+            else if (operation === 'pause') vm.power_state = 'paused';
+        }
+    }
+    renderHosts();
+    
     try {
         const res = await fetch('/api/power', {
             method: 'POST',
@@ -233,21 +249,23 @@ async function confirmAction() {
         });
         
         if (res.ok) {
-            // Trigger a rescan to update all states
-            scanNetwork();
+            // Trigger a background rescan to ensure states are completely in sync
+            scanNetwork(true);
         } else {
             const data = await res.json();
             const errorMsg = data.details ? (typeof data.details === 'object' ? JSON.stringify(data.details) : data.details) : data.error;
             alert(`Failed to change power state: ${errorMsg}`);
+            scanNetwork(true);
         }
     } catch (e) {
         console.error(e);
         alert('An error occurred while changing power state.');
+        scanNetwork(true);
     }
 }
 
 // Event Listeners
-DOM.scanBtn.addEventListener('click', scanNetwork);
+DOM.scanBtn.addEventListener('click', () => scanNetwork(false));
 DOM.toggleHiddenBtn.addEventListener('click', () => {
     showHidden = !showHidden;
     DOM.toggleHiddenBtn.textContent = showHidden ? 'Hide Hidden VMs' : 'Show Hidden VMs';
@@ -255,7 +273,7 @@ DOM.toggleHiddenBtn.addEventListener('click', () => {
 });
 DOM.autoScanCheckbox.addEventListener('change', (e) => {
     if (e.target.checked) {
-        autoScanInterval = setInterval(scanNetwork, 60000); // 60s
+        autoScanInterval = setInterval(() => scanNetwork(true), 60000); // 60s
     } else {
         clearInterval(autoScanInterval);
         autoScanInterval = null;
