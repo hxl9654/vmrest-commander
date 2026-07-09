@@ -233,10 +233,11 @@ async function confirmAction() {
     if (host) {
         const vm = host.vms.find(v => v.id === id);
         if (vm) {
-            if (operation === 'on' || operation === 'unpause') vm.power_state = 'poweredOn';
-            else if (operation === 'off' || operation === 'shutdown') vm.power_state = 'poweredOff';
-            else if (operation === 'suspend') vm.power_state = 'suspended';
-            else if (operation === 'pause') vm.power_state = 'paused';
+            if (operation === 'on') vm.power_state = 'poweringOn...';
+            else if (operation === 'unpause') vm.power_state = 'resuming...';
+            else if (operation === 'off' || operation === 'shutdown') vm.power_state = 'poweringOff...';
+            else if (operation === 'suspend') vm.power_state = 'suspending...';
+            else if (operation === 'pause') vm.power_state = 'pausing...';
         }
     }
     renderHosts();
