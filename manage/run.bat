@@ -5,5 +5,6 @@ if not exist node_modules\ (
 )
 
 echo Starting VMRest-Commander Server...
+start http://127.0.0.1:3001
 node server.js
 pause
