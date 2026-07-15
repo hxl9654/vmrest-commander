@@ -21,102 +21,141 @@ param (
   [int]$ListenPort = 55555,
   [int]$ConnectPort = 55555,
   [string]$ConnectAddress = "127.0.0.1",
-  [switch]$UsePasswordLogon
+  [switch]$UsePasswordLogon,
+  [switch]$ResetPassword
 )
 
-# 确保以管理员权限运行 / Ensure running with Administrator privileges
+# Ensure running with Administrator privileges
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-  Write-Warning "请以管理员权限运行此脚本！ / Please run this script with Administrator privileges!"
+  Write-Warning "Please run this script with Administrator privileges!"
   exit
 }
 
 Write-Host "===================================================="
-Write-Host "初始化 VMware REST API 服务及相关网络配置"
 Write-Host "Initializing VMware REST API Service & Network Configuration"
 Write-Host "===================================================="
 Write-Host ""
 
-# 1. 搜索 VMware Workstation Pro 的安装路径 / Search for VMware Workstation Pro installation path
-Write-Host "[1/5] 搜索 VMware Workstation Pro 安装路径... / Searching for VMware Workstation Pro installation path..."
+# 1. Search for VMware Workstation Pro installation path
+Write-Host "[1/5] Searching for VMware Workstation Pro installation path..."
 $registryPath = "HKLM:\SOFTWARE\VMware, Inc.\VMware Workstation"
 $vmwareInstallPath = (Get-ItemProperty -Path $registryPath -Name "InstallPath" -ErrorAction SilentlyContinue).InstallPath
 
 if (-not $vmwareInstallPath) {
-  Write-Error "在注册表中未找到 VMware Workstation Pro 的安装路径。 / VMware Workstation Pro installation path not found in registry."
+  Write-Host "Path not found in registry. Searching all drives for standard directories..."
+  $drives = Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Root
+  $relativePaths = @("Program Files\VMware\VMware Workstation", "Program Files (x86)\VMware\VMware Workstation")
+  
+  foreach ($drive in $drives) {
+    foreach ($relPath in $relativePaths) {
+      $testPath = Join-Path $drive $relPath
+      if (Test-Path (Join-Path $testPath "vmrest.exe")) {
+        $vmwareInstallPath = $testPath
+        break
+      }
+    }
+    if ($vmwareInstallPath) { break }
+  }
+}
+
+if (-not $vmwareInstallPath) {
+  Write-Error "VMware Workstation Pro installation path not found."
   exit
 }
 
 $vmrestPath = Join-Path $vmwareInstallPath "vmrest.exe"
 if (-not (Test-Path $vmrestPath)) {
-  Write-Error "未找到 vmrest.exe，路径为: $vmrestPath / vmrest.exe not found at: $vmrestPath"
+  Write-Error "vmrest.exe not found at: $vmrestPath"
   exit
 }
 
-Write-Host "找到 vmrest.exe 位于: $vmrestPath / Found vmrest.exe at: $vmrestPath"
+Write-Host "Found vmrest.exe at: $vmrestPath"
 Write-Host ""
 
-# 2. 调用 vmrest -C，配置用户名、密码 / Call vmrest -C to configure username and password
-Write-Host "[2/5] 配置 VMware REST API 用户名和密码... / Configuring VMware REST API username and password..."
-Write-Host "注意: 请在接下来的提示中输入您想要设置的用户名和密码。 / Note: Please enter the desired username and password in the following prompt."
-& $vmrestPath -C
+# 2. Call vmrest -C to configure username and password
+$cfgPath = Join-Path $env:USERPROFILE "vmrest.cfg"
+$skipPasswordSetup = (Test-Path $cfgPath) -and -not $ResetPassword
+
+if ($skipPasswordSetup) {
+  Write-Host "[2/5] VMware REST API configuration already exists. Skipping password setup."
+  Write-Host "Hint: Run with -ResetPassword switch to force password reset."
+}
+else {
+  Write-Host "[2/5] Configuring VMware REST API username and password..."
+  Write-Host "Note: Please enter the desired username and password in the following prompt."
+  $originalPath = (Get-Location).Path
+  Set-Location -Path $env:USERPROFILE
+  & $vmrestPath -C
+  Set-Location -Path $originalPath
+}
+
+if (Test-Path $cfgPath) {
+  (Get-Content $cfgPath) -replace "^port=.*", "port=$ConnectPort" | Set-Content $cfgPath
+}
 Write-Host ""
 
-# 3. 配置端口转发 / Configure port forwarding
-Write-Host "[3/5] 配置端口转发 (netsh portproxy)... / Configuring port forwarding (netsh portproxy)..."
+# 3. Configure port forwarding
+Write-Host "[3/5] Configuring port forwarding (netsh portproxy)..."
 
 if ([string]::IsNullOrWhiteSpace($ListenAddress)) {
-  # 自动获取本机 IPv4 地址，排除回环地址 / Auto-get local IPv4 addresses, excluding loopback
+  # Auto-get local IPv4 addresses, excluding loopback
   $ipAddresses = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceAlias -notmatch "Loopback" }).IPAddress
-  # 优先使用特定的内网 IP 段 / Prioritize specific internal IP subnets
+  # Prioritize specific internal IP subnets
   $ListenAddress = $ipAddresses | Where-Object { $_ -like "192.168.62.*" } | Select-Object -First 1
   if (-not $ListenAddress) { $ListenAddress = $ipAddresses | Where-Object { $_ -like "192.168.*" } | Select-Object -First 1 }
   if (-not $ListenAddress) { $ListenAddress = $ipAddresses | Where-Object { $_ -like "172.16.*" } | Select-Object -First 1 }
   if (-not $ListenAddress) { $ListenAddress = $ipAddresses | Where-Object { $_ -like "10.*" } | Select-Object -First 1 }
     
-  # 兜底 / Fallback
+  # Fallback
   if (-not $ListenAddress) {
     $ListenAddress = "0.0.0.0"
   }
 }
 
-$userInputListenAddr = Read-Host "请输入监听地址 / Please enter ListenAddress [默认/Default: $ListenAddress]"
+$userInputListenAddr = Read-Host "Please enter ListenAddress [Default: $ListenAddress]"
 if (-not [string]::IsNullOrWhiteSpace($userInputListenAddr)) {
   $ListenAddress = $userInputListenAddr
 }
 
-Write-Host "执行命令 / Executing command: netsh interface portproxy add v4tov4 listenport=$ListenPort listenaddress=$ListenAddress connectport=$ConnectPort connectaddress=$ConnectAddress"
+Write-Host "Executing command: netsh interface portproxy add v4tov4 listenport=$ListenPort listenaddress=$ListenAddress connectport=$ConnectPort connectaddress=$ConnectAddress"
 netsh interface portproxy add v4tov4 listenport=$ListenPort listenaddress=$ListenAddress connectport=$ConnectPort connectaddress=$ConnectAddress
+
+Write-Host "Restarting IP Helper service to ensure port proxy rule takes effect..."
+Restart-Service iphlpsvc -ErrorAction SilentlyContinue
 Write-Host ""
 
-# 4. 配置防火墙 / Configure firewall
-Write-Host "[4/5] 配置防火墙规则... / Configuring firewall rules..."
+# 4. Configure firewall
+Write-Host "[4/5] Configuring firewall rules..."
 $firewallRuleName = "VMware REST API"
 $existingRule = Get-NetFirewallRule -DisplayName $firewallRuleName -ErrorAction SilentlyContinue
 
 if ($existingRule) {
-  Write-Host "防火墙规则 '$firewallRuleName' 已存在，正在删除旧规则... / Firewall rule '$firewallRuleName' already exists, removing old rule..."
+  Write-Host "Firewall rule '$firewallRuleName' already exists, removing old rule..."
   Remove-NetFirewallRule -DisplayName $firewallRuleName
 }
 
-Write-Host "添加允许入站规则 / Adding inbound allow rule (TCP 端口/Port: $ListenPort)..."
+Write-Host "Adding inbound allow rule (TCP Port: $ListenPort)..."
 New-NetFirewallRule -DisplayName $firewallRuleName -Direction Inbound -LocalPort $ListenPort -Protocol TCP -Action Allow | Out-Null
-Write-Host "防火墙规则配置完成。 / Firewall rule configured."
+Write-Host "Firewall rule configured."
 Write-Host ""
 
-# 5. 创建计划任务 / Create scheduled task
-Write-Host "[5/5] 创建计划任务... / Creating scheduled task..."
+# 5. Create scheduled task
+Write-Host "[5/5] Creating scheduled task..."
 $taskName = "VMware REST API Background Service"
 $domainUser = "$env:USERDOMAIN\$env:USERNAME"
 $userSid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
 $currentDate = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ss.fffffff")
 $logonTypeStr = if ($UsePasswordLogon) { "Password" } else { "InteractiveToken" }
 
-# 生成静默运行的 VBScript / Generate VBScript for silent execution
+# Generate VBScript for silent execution
 $vbsPath = Join-Path $env:USERPROFILE "run_vmrest.vbs"
 $vbsContent = @"
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run """$vmrestPath"" -p $ListenPort", 0, False
+WScript.Sleep 5000
+WshShell.Run "powershell.exe -WindowStyle Hidden -Command ""Restart-Service iphlpsvc -ErrorAction SilentlyContinue""", 0, True
+WshShell.CurrentDirectory = "$env:USERPROFILE"
+WshShell.Run """$vmrestPath"" -p $ConnectPort", 0, False
 "@
 $vbsContent | Out-File -FilePath $vbsPath -Encoding Unicode
 
@@ -133,6 +172,10 @@ $xmlContent = @"
       <Enabled>true</Enabled>
     </BootTrigger>
     <LogonTrigger>
+      <Repetition>
+        <Interval>PT1H</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
       <Enabled>true</Enabled>
       <UserId>$domainUser</UserId>
     </LogonTrigger>
@@ -169,6 +212,7 @@ $xmlContent = @"
     <Exec>
       <Command>wscript.exe</Command>
       <Arguments>"$vbsPath"</Arguments>
+      <WorkingDirectory>$env:USERPROFILE</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>
@@ -177,10 +221,10 @@ $xmlContent = @"
 $xmlPath = Join-Path $env:TEMP "vmrest_task.xml"
 $xmlContent | Out-File -FilePath $xmlPath -Encoding Unicode
 
-Write-Host "VBScript 及 计划任务 XML 配置已生成，正在注册任务... / VBScript & Scheduled Task XML generated, registering task..."
+Write-Host "VBScript & Scheduled Task XML generated, registering task..."
 
 if ($UsePasswordLogon) {
-  $password = Read-Host "由于启用了 UsePasswordLogon，请输入当前用户的密码 / UsePasswordLogon is enabled, please enter password for ($domainUser)" -AsSecureString
+  $password = Read-Host "UsePasswordLogon is enabled, please enter password for ($domainUser)" -AsSecureString
   $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($password)
   $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
 
@@ -188,33 +232,35 @@ if ($UsePasswordLogon) {
 
   [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
   $plainPassword = ""
-} else {
+}
+else {
   schtasks.exe /create /tn $taskName /xml $xmlPath /f
 }
 
 if ($LASTEXITCODE -eq 0) {
-  Write-Host "计划任务创建成功！ / Scheduled task created successfully!"
-  Write-Host "正在按需启动计划任务... / Starting scheduled task on demand..."
+  Write-Host "Scheduled task created successfully!"
+  Write-Host "Starting scheduled task on demand..."
   Start-ScheduledTask -TaskName $taskName
   
-  Write-Host "等待服务启动 (3秒)... / Waiting for service to start (3s)..."
+  Write-Host "Waiting for service to start (3s)..."
   Start-Sleep -Seconds 3
   
-  Write-Host "正在测试服务连通性 / Testing service connectivity (TCP 端口/Port: $ListenPort)..."
+  Write-Host "Testing service connectivity (TCP Port: $ListenPort)..."
   $testResult = Test-NetConnection -ComputerName $ListenAddress -Port $ListenPort -InformationLevel Quiet
   if ($testResult) {
-    Write-Host "连通性测试成功！服务已在 $ListenAddress`:$ListenPort 响应。 / Connectivity test successful! Service responding at $ListenAddress`:$ListenPort."
-  } else {
-    Write-Warning "连通性测试失败！未能连接到 $ListenAddress`:$ListenPort，请检查服务是否正常启动。 / Connectivity test failed! Cannot connect to $ListenAddress`:$ListenPort, please check if service started normally."
+    Write-Host "Connectivity test successful! Service responding at $ListenAddress`:$ListenPort."
+  }
+  else {
+    Write-Warning "Connectivity test failed! Cannot connect to $ListenAddress`:$ListenPort, please check if service started normally."
   }
 }
 else {
-  Write-Warning "计划任务创建失败。请检查错误信息或尝试手动导入 $xmlPath。 / Scheduled task creation failed. Please check the error or try manually importing $xmlPath."
+  Write-Warning "Scheduled task creation failed. Please check the error or try manually importing $xmlPath."
 }
 
-# 清理 XML 文件 / Clean up XML file
+# Clean up XML file
 Remove-Item -Path $xmlPath -ErrorAction SilentlyContinue
 
 Write-Host "===================================================="
-Write-Host "初始化脚本执行完毕。 / Initialization script completed."
+Write-Host "Initialization script completed."
 Write-Host "===================================================="
