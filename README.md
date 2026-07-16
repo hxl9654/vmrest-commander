@@ -78,7 +78,15 @@ Choose a machine to run the Web Management Dashboard:
      "endIp": "192.168.1.110",    // Ending IP of the hosts to scan
      "username": "YOUR_USERNAME", // vmrest username set in Step 1
      "password": "YOUR_PASSWORD", // vmrest password set in Step 1
-     "hiddenVMs": []
+     "logLevel": "warn",          // Log output level (debug, info, warn, error)
+     "hiddenVMs": [],
+     "bootSequence": [            // Optional: Defines the order for Batch Start by matching VM names with wildcards
+       "k8s-etcd-*",
+       "db-*",
+       "k8s-lb-*",
+       "k8s-ctl-*",
+       "k8s-wrk-*"
+     ]
    }
    ```
 4. Start the service:
@@ -186,7 +194,15 @@ Feel free to submit Issues or Pull Requests to improve this project!
      "endIp": "192.168.1.110",    // 扫描宿主机的结束 IP
      "username": "YOUR_USERNAME", // 第一步中您设置的 vmrest 用户名
      "password": "YOUR_PASSWORD", // 第一步中您设置的 vmrest 密码
-     "hiddenVMs": []
+     "logLevel": "warn",          // 日志输出级别 (debug, info, warn, error)
+     "hiddenVMs": [],
+     "bootSequence": [            // 可选：通过通配符匹配虚拟机名称，定义批量开机的启动顺序
+       "k8s-etcd-*",
+       "db-*",
+       "k8s-lb-*",
+       "k8s-ctl-*",
+       "k8s-wrk-*"
+     ]
    }
    ```
 4. 启动服务：

@@ -28,6 +28,24 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+let currentLogLevel = 'warn'; // Default to warn
+
+function logMessage(level, ...args) {
+    const currentLvl = LOG_LEVELS[currentLogLevel] !== undefined ? LOG_LEVELS[currentLogLevel] : LOG_LEVELS.warn;
+    const targetLvl = LOG_LEVELS[level] !== undefined ? LOG_LEVELS[level] : LOG_LEVELS.info;
+    
+    if (targetLvl >= currentLvl) {
+        if (targetLvl >= LOG_LEVELS.error) {
+            console.error(...args);
+        } else if (targetLvl === LOG_LEVELS.warn) {
+            console.warn(...args);
+        } else {
+            console.log(...args);
+        }
+    }
+}
+
 const CONFIG_SAMPLE_PATH = path.join(__dirname, 'config-sample.json');
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 
@@ -45,7 +63,11 @@ if (!fs.existsSync(CONFIG_PATH)) {
 // Helper to read config
 function getConfig() {
     const data = fs.readFileSync(CONFIG_PATH, 'utf-8');
-    return JSON.parse(data);
+    const config = JSON.parse(data);
+    if (config.logLevel) {
+        currentLogLevel = config.logLevel.toLowerCase();
+    }
+    return config;
 }
 
 // Helper to write config
@@ -112,22 +134,22 @@ function getVmrestClient(ip, username, password) {
     });
 
     client.interceptors.request.use(request => {
-        console.log(`\x1b[36m[vmrest CALL]\x1b[0m ${request.method.toUpperCase()} ${request.baseURL}${request.url}`);
+        logMessage('debug', `\x1b[36m[vmrest CALL]\x1b[0m ${request.method.toUpperCase()} ${request.baseURL}${request.url}`);
         if (request.data) {
-            console.log(`\x1b[36m[vmrest DATA]\x1b[0m ${request.data}`);
+            logMessage('debug', `\x1b[36m[vmrest DATA]\x1b[0m ${request.data}`);
         }
         return request;
     });
 
     client.interceptors.response.use(response => {
-        console.log(`\x1b[32m[vmrest RESP]\x1b[0m ${response.status} OK - ${response.config.url}`);
+        logMessage('info', `\x1b[32m[vmrest RESP]\x1b[0m ${response.status} OK - ${response.config.url}`);
         return response;
     }, error => {
         const url = error.config ? error.config.url : 'unknown url';
-        console.log(`\x1b[91m[vmrest ERR]\x1b[0m ${error.message} - ${url}`);
+        logMessage('error', `\x1b[91m[vmrest ERR]\x1b[0m ${error.message} - ${url}`);
         if (error.response && error.response.data) {
             const details = typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : error.response.data;
-            console.log(`\x1b[91m[vmrest ERR DETAILS]\x1b[0m ${details}`);
+            logMessage('error', `\x1b[91m[vmrest ERR DETAILS]\x1b[0m ${details}`);
         }
         return Promise.reject(error);
     });
