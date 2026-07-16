@@ -141,6 +141,8 @@ app.get('/api/scan', async (req, res) => {
         const config = getConfig();
         const startInt = ip2int(config.startIp);
         const endInt = ip2int(config.endIp);
+        const skipHidden = req.query.skipHidden === 'true';
+        const hiddenVMs = config.hiddenVMs || [];
         
         if (startInt > endInt) {
             return res.status(400).json({ error: 'startIp must be <= endIp' });
@@ -160,6 +162,9 @@ app.get('/api/scan', async (req, res) => {
                 
                 // For each VM, fetch its power state
                 const vmsWithPower = await Promise.all(vms.map(async (vm) => {
+                    if (skipHidden && hiddenVMs.includes(vm.id)) {
+                        return { ...vm, power_state: 'skipped', host_ip: ip };
+                    }
                     try {
                         const powerResponse = await client.get(`/vms/${vm.id}/power`);
                         return { ...vm, power_state: powerResponse.data.power_state, host_ip: ip };

@@ -71,9 +71,29 @@ async function scanNetwork(isBackground = false) {
     DOM.errorMessage.classList.add('hidden');
 
     try {
-        const res = await fetch('/api/scan');
+        const skipHidden = isBackground && !showHidden;
+        const res = await fetch(`/api/scan${skipHidden ? '?skipHidden=true' : ''}`);
         if (!res.ok) throw new Error('Scan failed');
-        currentHostsData = await res.json();
+        
+        const newData = await res.json();
+        
+        if (skipHidden) {
+            newData.forEach(newHost => {
+                const oldHost = currentHostsData.find(h => h.ip === newHost.ip);
+                if (oldHost && newHost.vms && oldHost.vms) {
+                    newHost.vms.forEach(newVm => {
+                        if (newVm.power_state === 'skipped') {
+                            const oldVm = oldHost.vms.find(v => v.id === newVm.id);
+                            if (oldVm) {
+                                newVm.power_state = oldVm.power_state;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        currentHostsData = newData;
         renderHosts();
     } catch (e) {
         if (!isBackground) {
