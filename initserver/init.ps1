@@ -38,7 +38,7 @@ Write-Host "===================================================="
 Write-Host ""
 
 # 1. Search for VMware Workstation Pro installation path
-Write-Host "[1/5] Searching for VMware Workstation Pro installation path..."
+Write-Host "[1/6] Searching for VMware Workstation Pro installation path..."
 $registryPath = "HKLM:\SOFTWARE\VMware, Inc.\VMware Workstation"
 $vmwareInstallPath = (Get-ItemProperty -Path $registryPath -Name "InstallPath" -ErrorAction SilentlyContinue).InstallPath
 
@@ -78,11 +78,11 @@ $cfgPath = Join-Path $env:USERPROFILE "vmrest.cfg"
 $skipPasswordSetup = (Test-Path $cfgPath) -and -not $ResetPassword
 
 if ($skipPasswordSetup) {
-  Write-Host "[2/5] VMware REST API configuration already exists. Skipping password setup."
+  Write-Host "[2/6] VMware REST API configuration already exists. Skipping password setup."
   Write-Host "Hint: Run with -ResetPassword switch to force password reset."
 }
 else {
-  Write-Host "[2/5] Configuring VMware REST API username and password..."
+  Write-Host "[2/6] Configuring VMware REST API username and password..."
   Write-Host "Note: Please enter the desired username and password in the following prompt."
   $originalPath = (Get-Location).Path
   Set-Location -Path $env:USERPROFILE
@@ -96,7 +96,7 @@ if (Test-Path $cfgPath) {
 Write-Host ""
 
 # 3. Configure port forwarding
-Write-Host "[3/5] Configuring port forwarding (netsh portproxy)..."
+Write-Host "[3/6] Configuring port forwarding (netsh portproxy)..."
 
 if ([string]::IsNullOrWhiteSpace($ListenAddress)) {
   # Auto-get local IPv4 addresses, excluding loopback
@@ -126,7 +126,7 @@ Restart-Service iphlpsvc -ErrorAction SilentlyContinue
 Write-Host ""
 
 # 4. Configure firewall
-Write-Host "[4/5] Configuring firewall rules..."
+Write-Host "[4/6] Configuring firewall rules..."
 $firewallRuleName = "VMware REST API"
 $existingRule = Get-NetFirewallRule -DisplayName $firewallRuleName -ErrorAction SilentlyContinue
 
@@ -140,8 +140,14 @@ New-NetFirewallRule -DisplayName $firewallRuleName -Direction Inbound -LocalPort
 Write-Host "Firewall rule configured."
 Write-Host ""
 
-# 5. Create scheduled task
-Write-Host "[5/5] Creating scheduled task..."
+# 5. Configure VMAuthdService Recovery Options
+Write-Host "[5/6] Configuring VMAuthdService recovery options..."
+sc.exe failure VMAuthdService reset= 0 actions= restart/0/restart/0/restart/0 | Out-Null
+Write-Host "VMAuthdService recovery options configured."
+Write-Host ""
+
+# 6. Create scheduled task
+Write-Host "[6/6] Creating scheduled task..."
 $taskName = "VMware REST API Background Service"
 $domainUser = "$env:USERDOMAIN\$env:USERNAME"
 $userSid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
@@ -152,10 +158,11 @@ $logonTypeStr = if ($UsePasswordLogon) { "Password" } else { "InteractiveToken" 
 $vbsPath = Join-Path $env:USERPROFILE "run_vmrest.vbs"
 $vbsContent = @"
 Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "taskkill /F /IM vmrest.exe", 0, True
 WScript.Sleep 5000
 WshShell.Run "powershell.exe -WindowStyle Hidden -Command ""Restart-Service iphlpsvc -ErrorAction SilentlyContinue""", 0, True
 WshShell.CurrentDirectory = "$env:USERPROFILE"
-WshShell.Run """$vmrestPath"" -p $ConnectPort", 0, False
+WshShell.Run "cmd.exe /c """"$vmrestPath"""" -p $ConnectPort -d > vmrest.log 2>&1", 0, False
 "@
 $vbsContent | Out-File -FilePath $vbsPath -Encoding Unicode
 
