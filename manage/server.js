@@ -98,7 +98,7 @@ app.post('/api/config', (req, res) => {
 
 // Axios instance factory for vmrest
 function getVmrestClient(ip, username, password) {
-    return axios.create({
+    const client = axios.create({
         baseURL: `http://${ip}:55555/api`,
         timeout: 3000,
         auth: {
@@ -110,6 +110,29 @@ function getVmrestClient(ip, username, password) {
             'Accept': 'application/vnd.vmware.vmw.rest-v1+json'
         }
     });
+
+    client.interceptors.request.use(request => {
+        console.log(`\x1b[36m[vmrest CALL]\x1b[0m ${request.method.toUpperCase()} ${request.baseURL}${request.url}`);
+        if (request.data) {
+            console.log(`\x1b[36m[vmrest DATA]\x1b[0m ${request.data}`);
+        }
+        return request;
+    });
+
+    client.interceptors.response.use(response => {
+        console.log(`\x1b[32m[vmrest RESP]\x1b[0m ${response.status} OK - ${response.config.url}`);
+        return response;
+    }, error => {
+        const url = error.config ? error.config.url : 'unknown url';
+        console.log(`\x1b[91m[vmrest ERR]\x1b[0m ${error.message} - ${url}`);
+        if (error.response && error.response.data) {
+            const details = typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : error.response.data;
+            console.log(`\x1b[91m[vmrest ERR DETAILS]\x1b[0m ${details}`);
+        }
+        return Promise.reject(error);
+    });
+
+    return client;
 }
 
 // API: Scan IPs for VMs
