@@ -13,11 +13,11 @@
 
 ### 🌟 Features
 
-- **Automated Configuration (Init Server)**: Provides an automated PowerShell script to set up `vmrest` credentials, configure firewall rules, set up port forwarding (`netsh portproxy`), and create a scheduled task for silent background auto-start.
+- **Automated Configuration (Init Server)**: Provides an automated PowerShell script to set up `vmrest` credentials, configure firewall rules, set up port forwarding (`netsh portproxy`), and create a scheduled task for silent background auto-start. Now includes configuration preservation, `VMAuthdService` recovery, hourly task repetition, and debug logging (`vmrest.log`) for enhanced stability.
 - **Batch Host Scanning (Web Management)**: A lightweight Node.js management backend that supports scanning a custom IP range for online hosts.
 - **Global VM Overview**: Displays all VMs across all hosts as cards in a unified Web UI, showing real-time power states (Powered On, Powered Off, Suspended, etc.).
-- **Power Management**: Control your VMs directly from the web interface: Power On, Power Off, Shutdown, Suspend, Resume, Pause, and Unpause.
-- **Hide Specific VMs**: Support hiding specific VMs in the UI (e.g., template machines or test environments) that don't require attention.
+- **Power Management**: Control your VMs directly from the web interface: Power On, Power Off, Shutdown, Suspend, Resume, Pause, and Unpause. Supports **Batch Start** with a phased progress bar.
+- **Hide Specific VMs**: Support hiding specific VMs in the UI (e.g., template machines or test environments) that don't require attention. Skips polling for hidden VMs to improve performance.
 
 ### 🚀 Architecture
 
@@ -85,16 +85,17 @@ Choose a machine to run the Web Management Dashboard:
    ```bash
    npm start
    ```
+   *(Alternatively, you can just double-click `run.bat` in the `manage` directory on Windows to start the server and automatically open the UI in your browser.)*
    *(For long-term running, it's recommended to use `pm2` or register it as a system service: `pm2 start server.js --name "vmrest-manage"`)*
 
 #### Step 3: Access the Web UI
 
 Open your browser and navigate to the IP of the management server on port 3001, for example:
-`http://localhost:3001` or `http://192.168.1.x:3001`
+`http://localhost:3001` or `http://192.168.1.x:3001` *(If you used `run.bat`, it will open automatically).*
 
 - Click the **Scan Network** button to scan the configured IP range.
 - Once the scan completes, you can view the VM status of all online hosts and control their power states.
-- You can also check "Auto Scan" to enable automatic refreshing.
+- **Auto Scan** is enabled by default with a 30-second interval for real-time monitoring.
 
 ### ⚠️ Security & Important Notes
 
@@ -120,11 +121,11 @@ Feel free to submit Issues or Pull Requests to improve this project!
 
 ### 🌟 主要功能
 
-- **自动化配置 (Init Server)**：提供自动化的 PowerShell 脚本，一键完成 `vmrest` 服务的凭证设置、防火墙放行、端口转发（`netsh portproxy`）以及设置后台开机自启（计划任务），让你的宿主机无感提供 REST API 服务。
+- **自动化配置 (Init Server)**：提供自动化的 PowerShell 脚本，一键完成 `vmrest` 服务的凭证设置、防火墙放行、端口转发（`netsh portproxy`）以及设置后台开机自启（计划任务）。支持配置防覆盖、`VMAuthdService` 故障恢复、计划任务每小时循环执行以及自动生成调试日志（`vmrest.log`），极大提升了宿主机后台服务的稳定性与可维护性。
 - **批量主机扫描 (Web Management)**：通过 Node.js 提供轻量级管理后台，支持扫描自定义 IP 段内的在线宿主机。
 - **全局虚拟机概览**：在统一的 Web UI 中以卡片形式展示所有宿主机上的虚拟机，实时呈现电源状态（Powered On, Powered Off, Suspended 等）。
-- **电源管理**：在网页端直接对各个虚拟机执行操作：开机 (Power On)、关机 (Power Off / Shutdown)、挂起 (Suspend)、恢复 (Resume)、暂停 (Pause/Unpause)。
-- **隐藏特定虚拟机**：支持在 UI 层面隐藏某些不需要关注的虚拟机（例如模板机或测试环境）。
+- **电源管理**：在网页端直接对各个虚拟机执行操作：开机 (Power On)、关机 (Power Off / Shutdown)、挂起 (Suspend)、恢复 (Resume)、暂停 (Pause/Unpause)。支持**批量开机**并配有阶段性进度条展示。
+- **隐藏特定虚拟机**：支持在 UI 层面隐藏某些不需要关注的虚拟机（例如模板机或测试环境），且系统会自动跳过隐藏虚拟机的状态轮询以优化性能。
 
 ### 🚀 架构说明
 
@@ -192,16 +193,17 @@ Feel free to submit Issues or Pull Requests to improve this project!
    ```bash
    npm start
    ```
+   *（或者在 Windows 下直接双击 `manage` 目录内的 `run.bat`，即可启动服务并自动在浏览器中打开 UI 面板。）*
    *(对于长期运行，建议使用 `pm2` 或将其注册为系统服务：`pm2 start server.js --name "vmrest-manage"`)*
 
 #### 第三步：访问 Web 界面
 
 打开浏览器，访问管理服务所在机器的 IP 及 3001 端口，例如：
-`http://localhost:3001` 或 `http://192.168.1.x:3001`
+`http://localhost:3001` 或 `http://192.168.1.x:3001` （如果使用的是 `run.bat`，浏览器会自动打开）。
 
 - 点击 **Scan Network** 按钮，系统会扫描配置好的 IP 段。
 - 扫描完成后，即可查看所有在线主机的虚拟机状态，并点击按钮对它们进行电源控制。
-- 也可以勾选 "Auto Scan" 开启自动刷新。
+- 系统默认开启 **Auto Scan**（30秒间隔），以实现状态的实时刷新。
 
 ### ⚠️ 安全与注意事项
 
