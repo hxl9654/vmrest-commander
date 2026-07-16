@@ -17,6 +17,7 @@
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,23 +25,25 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <header>
             <div class="logo">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="3" width="20" height="14" rx="2" stroke="white" stroke-width="2"/>
-                    <path d="M8 21H16" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M12 17V21" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="2" y="3" width="20" height="14" rx="2" stroke="white" stroke-width="2" />
+                    <path d="M8 21H16" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    <path d="M12 17V21" stroke="white" stroke-width="2" stroke-linecap="round" />
                 </svg>
                 <h1>VM Manager</h1>
             </div>
             <div class="actions">
                 <label class="auto-scan-toggle">
-                    <input type="checkbox" id="auto-scan-checkbox">
-                    <span>Auto Scan (60s)</span>
+                    <input type="checkbox" id="auto-scan-checkbox" checked>
+                    <span>Auto Scan (30s)</span>
                 </label>
                 <button id="scan-btn" class="btn primary">Scan Network</button>
+                <button id="batch-start-btn" class="btn primary">Batch Start</button>
                 <button id="toggle-hidden-btn" class="btn secondary">Show Hidden VMs</button>
             </div>
         </header>
@@ -50,9 +53,9 @@
                 <div class="spinner"></div>
                 <p>Scanning network, please wait...</p>
             </div>
-            
+
             <div id="error-message" class="hidden alert error"></div>
-            
+
             <div id="results-container">
                 <!-- Hosts and VMs will be rendered here -->
             </div>
@@ -73,4 +76,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>

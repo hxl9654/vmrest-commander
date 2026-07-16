@@ -23,6 +23,7 @@ let autoScanInterval = null;
 
 const DOM = {
     scanBtn: document.getElementById('scan-btn'),
+    batchStartBtn: document.getElementById('batch-start-btn'),
     toggleHiddenBtn: document.getElementById('toggle-hidden-btn'),
     loading: document.getElementById('loading'),
     resultsContainer: document.getElementById('results-container'),
@@ -267,6 +268,11 @@ async function confirmAction() {
 
 // Event Listeners
 DOM.scanBtn.addEventListener('click', () => scanNetwork(false));
+DOM.batchStartBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to start VMs in sequence according to the config?')) {
+        batchPowerOn();
+    }
+});
 DOM.toggleHiddenBtn.addEventListener('click', () => {
     showHidden = !showHidden;
     DOM.toggleHiddenBtn.textContent = showHidden ? 'Hide Hidden VMs' : 'Show Hidden VMs';
@@ -274,7 +280,7 @@ DOM.toggleHiddenBtn.addEventListener('click', () => {
 });
 DOM.autoScanCheckbox.addEventListener('change', (e) => {
     if (e.target.checked) {
-        autoScanInterval = setInterval(() => scanNetwork(true), 60000); // 60s
+        autoScanInterval = setInterval(() => scanNetwork(true), 30000); // 30s
     } else {
         clearInterval(autoScanInterval);
         autoScanInterval = null;
@@ -283,5 +289,87 @@ DOM.autoScanCheckbox.addEventListener('change', (e) => {
 DOM.modalCancelBtn.addEventListener('click', closeModal);
 DOM.modalConfirmBtn.addEventListener('click', confirmAction);
 
+async function batchPowerOn() {
+    if (!appConfig || !appConfig.bootSequence) {
+        alert("Boot sequence not configured in config.json.");
+        return;
+    }
+    
+    DOM.loading.classList.remove('hidden');
+    DOM.errorMessage.classList.add('hidden');
+    const loadingText = DOM.loading.querySelector('p');
+    loadingText.textContent = 'Starting VMs in sequence...';
+
+    const getVmName = (vm) => {
+        if (!vm.path) return vm.id;
+        const parts = vm.path.split(/[/\\]/);
+        if (parts.length >= 2 && parts[parts.length - 1].toLowerCase().endsWith('.vmx')) {
+            return parts[parts.length - 2];
+        }
+        return vm.id;
+    };
+
+    const sequence = appConfig.bootSequence;
+    
+    try {
+        for (const pattern of sequence) {
+            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+            
+            const vmsToStart = [];
+            currentHostsData.forEach(host => {
+                if (host.status !== 'online' || !host.vms) return;
+                host.vms.forEach(vm => {
+                    const vmName = getVmName(vm);
+                    if (regex.test(vmName) && (vm.power_state === 'poweredOff' || vm.power_state === 'suspended' || vm.power_state === 'unknown')) {
+                        vmsToStart.push({ ip: host.ip, id: vm.id, name: vmName });
+                    }
+                });
+            });
+
+            if (vmsToStart.length > 0) {
+                console.log(`Starting group ${pattern}:`, vmsToStart.map(v => v.name));
+                loadingText.textContent = `Starting ${pattern} (${vmsToStart.length} VMs)...`;
+                
+                // Optimistically update UI state
+                vmsToStart.forEach(vmInfo => {
+                    const host = currentHostsData.find(h => h.ip === vmInfo.ip);
+                    if (host) {
+                        const vm = host.vms.find(v => v.id === vmInfo.id);
+                        if (vm) vm.power_state = 'poweringOn...';
+                    }
+                });
+                renderHosts();
+                
+                const promises = vmsToStart.map(vmInfo => {
+                    return fetch('/api/power', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ip: vmInfo.ip, id: vmInfo.id, operation: 'on' })
+                    });
+                });
+                
+                await Promise.allSettled(promises);
+                
+                // Trigger a background scan to reflect actual states
+                scanNetwork(true);
+                
+                // Wait 15 seconds for this group to start booting before next sequence
+                await new Promise(r => setTimeout(r, 15000));
+            }
+        }
+        alert("Batch power on completed.");
+    } catch (e) {
+        console.error(e);
+        alert('An error occurred during batch power on.');
+    } finally {
+        loadingText.textContent = 'Scanning network, please wait...';
+        DOM.loading.classList.add('hidden');
+        scanNetwork(true);
+    }
+}
+
 // Init
 fetchConfig();
+if (DOM.autoScanCheckbox.checked) {
+    autoScanInterval = setInterval(() => scanNetwork(true), 30000);
+}

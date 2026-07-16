@@ -3,5 +3,12 @@
   "endIp": "192.168.1.110",
   "username": "YOUR_USERNAME",
   "password": "YOUR_PASSWORD",
-  "hiddenVMs": []
+  "hiddenVMs": [],
+  "bootSequence": [
+    "k8s-etcd-*",
+    "db-*",
+    "k8s-lb-*",
+    "k8s-ctl-*",
+    "k8s-wrk-*"
+  ]
 }
