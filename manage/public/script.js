@@ -20,12 +20,16 @@ let currentHostsData = [];
 let showHidden = false;
 let pendingAction = null; // { ip, id, operation, vmName }
 let autoScanInterval = null;
+let isBatchPowerOnRunning = false;
 
 const DOM = {
     scanBtn: document.getElementById('scan-btn'),
     batchStartBtn: document.getElementById('batch-start-btn'),
     toggleHiddenBtn: document.getElementById('toggle-hidden-btn'),
     loading: document.getElementById('loading'),
+    loadingSpinner: document.getElementById('loading-spinner'),
+    loadingText: document.getElementById('loading-text'),
+    batchProgress: document.getElementById('batch-progress'),
     resultsContainer: document.getElementById('results-container'),
     modal: document.getElementById('confirmation-modal'),
     modalText: document.getElementById('modal-text'),
@@ -63,8 +67,15 @@ async function updateConfig(updates) {
 }
 
 async function scanNetwork(isBackground = false) {
+    if (isBatchPowerOnRunning) {
+        isBackground = true;
+    }
+
     if (!isBackground) {
         DOM.loading.classList.remove('hidden');
+        if (DOM.loadingSpinner) DOM.loadingSpinner.style.display = '';
+        if (DOM.batchProgress) DOM.batchProgress.classList.add('hidden');
+        if (DOM.loadingText) DOM.loadingText.textContent = 'Scanning network, please wait...';
         DOM.resultsContainer.innerHTML = '';
     }
     
@@ -310,15 +321,23 @@ DOM.modalCancelBtn.addEventListener('click', closeModal);
 DOM.modalConfirmBtn.addEventListener('click', confirmAction);
 
 async function batchPowerOn() {
+    if (isBatchPowerOnRunning) {
+        return;
+    }
+
     if (!appConfig || !appConfig.bootSequence) {
         alert("Boot sequence not configured in config.json.");
         return;
     }
     
+    isBatchPowerOnRunning = true;
+    
     DOM.loading.classList.remove('hidden');
     DOM.errorMessage.classList.add('hidden');
-    const loadingText = DOM.loading.querySelector('p');
-    loadingText.textContent = 'Starting VMs in sequence...';
+    
+    if (DOM.loadingSpinner) DOM.loadingSpinner.style.display = 'none';
+    if (DOM.batchProgress) DOM.batchProgress.classList.remove('hidden');
+    if (DOM.loadingText) DOM.loadingText.textContent = 'Starting VMs in sequence...';
 
     const getVmName = (vm) => {
         if (!vm.path) return vm.id;
@@ -331,10 +350,33 @@ async function batchPowerOn() {
 
     const sequence = appConfig.bootSequence;
     
+    // Construct progress bar HTML
+    if (DOM.batchProgress) {
+        let stepsHtml = '<div class="batch-steps">';
+        sequence.forEach((pattern, index) => {
+            stepsHtml += `
+                <div class="step-item step-waiting" id="batch-step-${index}">
+                    <div class="step-icon-container"></div>
+                    <div class="step-label">${pattern}</div>
+                </div>
+            `;
+            if (index < sequence.length - 1) {
+                stepsHtml += `<div class="step-line" id="batch-line-${index}"></div>`;
+            }
+        });
+        stepsHtml += '</div>';
+        DOM.batchProgress.innerHTML = stepsHtml;
+    }
+
     try {
-        for (const pattern of sequence) {
-            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
+        for (let i = 0; i < sequence.length; i++) {
+            const pattern = sequence[i];
+            const stepEl = document.getElementById(`batch-step-${i}`);
+            const lineEl = document.getElementById(`batch-line-${i}`);
             
+            if (stepEl) stepEl.className = 'step-item step-active';
+            
+            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$', 'i');
             const vmsToStart = [];
             currentHostsData.forEach(host => {
                 if (host.status !== 'online' || !host.vms) return;
@@ -346,11 +388,14 @@ async function batchPowerOn() {
                 });
             });
 
+            let stepFailed = false;
+            let stepSkipped = false;
+            let errorMsg = '';
+
             if (vmsToStart.length > 0) {
                 console.log(`Starting group ${pattern}:`, vmsToStart.map(v => v.name));
-                loadingText.textContent = `Starting ${pattern} (${vmsToStart.length} VMs)...`;
+                if (DOM.loadingText) DOM.loadingText.textContent = `Starting ${pattern} (${vmsToStart.length} VM${vmsToStart.length > 1 ? 's' : ''})...`;
                 
-                // Optimistically update UI state
                 vmsToStart.forEach(vmInfo => {
                     const host = currentHostsData.find(h => h.ip === vmInfo.ip);
                     if (host) {
@@ -368,23 +413,76 @@ async function batchPowerOn() {
                     });
                 });
                 
-                await Promise.allSettled(promises);
+                const results = await Promise.allSettled(promises);
+                let errors = [];
+                for (let r of results) {
+                    if (r.status === 'rejected') {
+                        errors.push(r.reason?.message || 'Network Error');
+                    } else if (r.value && !r.value.ok) {
+                        errors.push(`HTTP ${r.value.status}`);
+                    }
+                }
                 
-                // Trigger a background scan to reflect actual states
+                if (errors.length > 0) {
+                    stepFailed = true;
+                    errorMsg = errors.join(', ');
+                }
+                
                 scanNetwork(true);
                 
-                // Wait 15 seconds for this group to start booting before next sequence
                 await new Promise(r => setTimeout(r, 15000));
+            } else {
+                stepSkipped = true;
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            if (stepEl) {
+                if (stepFailed) {
+                    stepEl.className = 'step-item step-failed';
+                    stepEl.title = errorMsg;
+                } else if (stepSkipped) {
+                    stepEl.className = 'step-item step-skipped';
+                    stepEl.title = 'No VMs to start';
+                } else {
+                    stepEl.className = 'step-item step-completed';
+                }
+            }
+            if (lineEl) {
+                if (stepFailed) {
+                    lineEl.classList.add('failed');
+                } else if (!stepSkipped) {
+                    lineEl.classList.add('completed');
+                }
             }
         }
-        alert("Batch power on completed.");
+        
+        if (DOM.loadingText) {
+            DOM.loadingText.textContent = 'Batch start completed.';
+            DOM.loadingText.style.color = 'var(--success)';
+        }
     } catch (e) {
         console.error(e);
-        alert('An error occurred during batch power on.');
+        const activeStep = document.querySelector('.step-active');
+        if (activeStep) {
+            activeStep.className = 'step-item step-failed';
+            activeStep.title = e.message || 'Error occurred';
+        }
+        if (DOM.loadingText) {
+            DOM.loadingText.textContent = 'An error occurred during batch power on.';
+            DOM.loadingText.style.color = 'var(--danger)';
+        }
     } finally {
-        loadingText.textContent = 'Scanning network, please wait...';
-        DOM.loading.classList.add('hidden');
-        scanNetwork(true);
+        setTimeout(() => {
+            isBatchPowerOnRunning = false;
+            if (DOM.loadingText) {
+                DOM.loadingText.textContent = 'Scanning network, please wait...';
+                DOM.loadingText.style.color = '';
+            }
+            DOM.loading.classList.add('hidden');
+            if (DOM.loadingSpinner) DOM.loadingSpinner.style.display = '';
+            if (DOM.batchProgress) DOM.batchProgress.classList.add('hidden');
+            scanNetwork(true);
+        }, 10000);
     }
 }
 

@@ -43,7 +43,7 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
@@ -320,13 +320,20 @@ h1 {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 #loading {
     text-align: center;
-    padding: 4rem 0;
+    padding: 0 0 1rem;
     color: var(--text-secondary);
+}
+
+#loading p {
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 /* Modal */
@@ -372,6 +379,165 @@ h1 {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Batch Progress Styles */
+.batch-progress-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 1rem;
+    width: 100%;
+}
+
+.batch-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 0.5rem;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    min-width: 80px;
+}
+
+.step-icon-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: transparent;
+    z-index: 1;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* Waiting (grey hollow) */
+.step-waiting .step-icon-container {
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Active (blue spinner) */
+.step-active .step-icon-container {
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--accent-primary);
+    animation: spin 1s linear infinite;
+}
+
+/* Completed (green check) */
+.step-completed .step-icon-container {
+    background-color: var(--success);
+    border: 2px solid var(--success);
+}
+
+.step-completed .step-icon-container::after {
+    content: '';
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 4px;
+}
+
+/* Failed (red cross) */
+.step-failed .step-icon-container {
+    background-color: var(--danger);
+    border: 2px solid var(--danger);
+}
+
+.step-failed .step-icon-container::before,
+.step-failed .step-icon-container::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background-color: white;
+    top: 50%;
+    left: 50%;
+}
+
+.step-failed .step-icon-container::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.step-failed .step-icon-container::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.step-label {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
+    word-break: break-all;
+    transition: all 0.3s ease;
+}
+
+.step-active .step-label {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.step-completed .step-label {
+    color: var(--success);
+}
+
+.step-failed .step-label {
+    color: var(--danger);
+}
+
+/* Lines between steps */
+.step-line {
+    flex: 1;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.1);
+    min-width: 40px;
+    margin: 15px 10px 0;
+    transition: all 0.3s ease;
+}
+
+.step-line.completed {
+    background-color: var(--success);
+}
+
+.step-line.failed {
+    background-color: var(--danger);
+}
+
+/* Skipped (grey circle with arrow) */
+.step-skipped .step-icon-container {
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background-color: transparent;
+}
+
+.step-skipped .step-icon-container::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+    transform: rotate(45deg);
+    position: relative;
+    right: 2px;
+}
+
+.step-skipped .step-label {
+    color: var(--text-secondary);
 }
