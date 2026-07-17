@@ -52,7 +52,7 @@ body {
 .app-container {
     max-width: 1440px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
 }
 
 header {
@@ -209,12 +209,12 @@ h1 {
 /* VM Grid */
 .vm-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(335px, 1fr));
+    gap: 15px;
 }
 
 .vm-card {
-    padding: 1.5rem;
+    padding: 1.2rem;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     display: flex;
     flex-direction: column;
